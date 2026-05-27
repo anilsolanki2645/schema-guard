@@ -79,6 +79,7 @@ CREATE TABLE public.orders (
     amount DECIMAL(10,2) NOT NULL,
     status VARCHAR(20) NOT NULL
 );
+
 INSERT INTO orders VALUES (1, 99.99, 'shipped');
 ```
 
