@@ -1,0 +1,27 @@
+{
+  "captured_at": "2026-05-27T09:07:04.391169+00:00",
+  "hash": "643bba53f643c528709feba4aa0c2e828b0afe9f9c5136c47abd25d1c6990475",
+  "schema": {
+    "table": "public.orders",
+    "columns": [
+      {
+        "name": "order_id",
+        "type": "INTEGER",
+        "nullable": false,
+        "primary_key": true
+      },
+      {
+        "name": "amount",
+        "type": "NUMERIC(10, 2)",
+        "nullable": false,
+        "primary_key": false
+      },
+      {
+        "name": "status",
+        "type": "VARCHAR(20)",
+        "nullable": false,
+        "primary_key": false
+      }
+    ]
+  }
+}

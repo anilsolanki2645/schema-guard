@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "schema-guard"
+version = "0.1.0"
+description = "Guard your data pipelines from silent schema drift"
+authors = [{name = "Anil Solanki", email = "anusolanki2645@gmail.com"}]
+dependencies = [
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "sqlalchemy>=1.4",
+    "deepdiff>=6.2",
+    "requests",
+    "pyarrow"
+]
+[project.scripts]
+schema-guard = "schema_guard.cli:cli"

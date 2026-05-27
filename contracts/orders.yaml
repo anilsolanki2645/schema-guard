@@ -1,0 +1,16 @@
+source:
+  name: prod_orders
+  type: postgres
+  connection: "env:DB_CONNECTION_STRING"
+  schema: public
+  table: orders
+columns:
+  - name: order_id
+    type: integer
+    nullable: false
+  - name: amount
+    type: numeric(10,2)
+    nullable: false
+  - name: status
+    type: character varying(20)
+    nullable: false
