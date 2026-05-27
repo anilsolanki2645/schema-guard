@@ -19,4 +19,4 @@ jobs:
             echo "DB_CONNECTION_STRING length: ${#DB_CONNECTION_STRING}"
           fi
         env:
-          DB_CONNECTION_STRING: "postgresql://neondb_owner:npg_YwQcVqyP81uo@ep-ancient-boat-apzhsnel-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require"
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
