@@ -18,5 +18,5 @@ jobs:
           else
             echo "DB_CONNECTION_STRING length: ${#DB_CONNECTION_STRING}"
           fi
-      env:
-        DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+    env:
+      DB_CONNECTION_STRING: $secrets.DB_CONNECTION_STRING
