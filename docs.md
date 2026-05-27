@@ -1,4 +1,4 @@
-```markdown
+
 # 🛡️ Schema Guard
 
 **Stop silent schema drift before it breaks your production data pipelines.**
@@ -20,16 +20,17 @@ Schema Guard stops this at the CI gate. You define a **data contract** (YAML), c
 
 ## 🧠 Architecture Overview
 
-```
-┌─────────────────┐      ┌──────────────┐      ┌─────────────────┐
-│  Contract       │──────▶│  CLI (snap)  │──────▶│  Snapshot JSON  │
-│  (orders.yaml)  │      └──────────────┘      └─────────────────┘
-│                 │                │
-│  Live Database  │                │
-└─────────────────┘                │
+``` 
+
+┌─────────────────┐        ┌──────────────┐        ┌─────────────────┐
+│  Contract       │──────▶ │  CLI (snap)  │──────▶│  Snapshot JSON  │
+│  (orders.yaml)  │        └──────────────┘        └─────────────────┘
+│                 │               │
+│  Live Database  │               │
+└─────────────────┘               │
                                   │
                       ┌───────────▼───────────┐
-                      │  CLI (gate)           │
+                      │  CLI (gate)            │
                       │  Compares live schema  │
                       │  vs snapshot + contract│
                       └───────────┬───────────┘
@@ -341,6 +342,3 @@ Schema Guard is open‑source under the **MIT License**. See the [LICENSE](LICEN
 ---
 
 **Built with frustration turned into code by a data engineer who just wants to sleep through the night.** ✨
-```
-
-That README is ready to drop into your repository. It explains the problem, provides a full walkthrough, includes a working example, and covers every part of your tool—from configuration to CI/CD. Let me know when you want the next piece.
