@@ -28,11 +28,11 @@ jobs:
         run: schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
         env:
           DB_CONNECTION_STRING: "postgresql://neondb_owner:npg_YwQcVqyP81uo@ep-ancient-boat-apzhsnel-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require"
-          # EMAIL_ENABLED: true
-          # EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
-          # EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
-          # EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          # EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          # EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          # EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          # EMAIL_SUBJECT: "Schema Drift Detected in CI"
+          EMAIL_ENABLED: "true"
+          EMAIL_HOST: "smtp.gmail.com"
+          EMAIL_PORT: "587"
+          EMAIL_USER: "anusolanki2645@gmail.com"
+          EMAIL_PASSWORD: "odkk gtjq yvdd mxwr"    # Use an App Password, not your real password
+          EMAIL_FROM: "anusolanki2645@gmail.com"
+          EMAIL_TO: "anil94382@gmail.com"        # Can be a list separated by commas
+          EMAIL_SUBJECT: "Schema Drift Detected"
