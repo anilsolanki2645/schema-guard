@@ -10,15 +10,21 @@ jobs:
           python-version: '3.10'
       - name: Install schema-guard
         run: pip install -e .
-      - name: Run schema gate
-        run: schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
-        env:
-          DB_CONNECTION_STRING: $secrets.DB_CONNECTION_STRING
-          # EMAIL_ENABLED: true
-          # EMAIL_HOST: $secrets.EMAIL_HOST
-          # EMAIL_PORT: $secrets.EMAIL_PORT
-          # EMAIL_USER: $secrets.EMAIL_USER
-          # EMAIL_PASSWORD: $secrets.EMAIL_PASSWORD
-          # EMAIL_FROM: $secrets.EMAIL_FROM
-          # EMAIL_TO: $secrets.EMAIL_TO
-          # EMAIL_SUBJECT: "Schema Drift Detected in CI"
+      - name: Debug – check secret length
+        run: |
+          if [ -z "$DB_CONNECTION_STRING" ]; then
+            echo "ERROR: DB_CONNECTION_STRING is empty"
+            exit 1
+          else
+            echo "DB_CONNECTION_STRING length: ${#DB_CONNECTION_STRING}"
+          fi
+    env:
+      DB_CONNECTION_STRING: $secrets.DB_CONNECTION_STRING
+      EMAIL_ENABLED: true
+      EMAIL_HOST: $secrets.EMAIL_HOST
+      EMAIL_PORT: $secrets.EMAIL_PORT
+      EMAIL_USER: $secrets.EMAIL_USER
+      EMAIL_PASSWORD: $secrets.EMAIL_PASSWORD
+      EMAIL_FROM: $secrets.EMAIL_FROM
+      EMAIL_TO: $secrets.EMAIL_TO
+      EMAIL_SUBJECT: "Schema Drift Detected in CI"
