@@ -23,11 +23,6 @@ jobs:
         env:
           DB_CONNECTION_STRING: $secrets.DB_CONNECTION_STRING
 
-      - name: Check GITHUB_TOKEN
-        run: echo "GITHUB_TOKEN length: ${#GITHUB_TOKEN}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       # The actual gate – runs only if debug passed
       - name: Run schema gate
         run: schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
