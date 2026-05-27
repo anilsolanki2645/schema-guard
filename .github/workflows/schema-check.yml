@@ -14,11 +14,11 @@ jobs:
         run: schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
         env:
           DB_CONNECTION_STRING: $secrets.DB_CONNECTION_STRING
-          EMAIL_ENABLED: true,
-          EMAIL_HOST: $secrets.EMAIL_HOST,
-          EMAIL_PORT: $secrets.EMAIL_PORT,
-          EMAIL_USER: $secrets.EMAIL_USER,
-          EMAIL_PASSWORD: $secrets.EMAIL_PASSWORD,
-          EMAIL_FROM: $secrets.EMAIL_FROM,
-          EMAIL_TO: $secrets.EMAIL_TO,
-          EMAIL_SUBJECT: "Schema Drift Detected in CI"
+          # EMAIL_ENABLED: true
+          # EMAIL_HOST: $secrets.EMAIL_HOST
+          # EMAIL_PORT: $secrets.EMAIL_PORT
+          # EMAIL_USER: $secrets.EMAIL_USER
+          # EMAIL_PASSWORD: $secrets.EMAIL_PASSWORD
+          # EMAIL_FROM: $secrets.EMAIL_FROM
+          # EMAIL_TO: $secrets.EMAIL_TO
+          # EMAIL_SUBJECT: "Schema Drift Detected in CI"
