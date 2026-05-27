@@ -17,8 +17,8 @@ jobs:
       - name: Run schema gate
         run: schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
         env:
-          DB_CONNECTION_STRING: ${{ secrets.NEON_DB_CONNECTION_STRING }}   # full Neon URL with ?sslmode=require
-          EMAIL_ENABLED: true
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+          EMAIL_ENABLED: 'true'
           EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
           EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
