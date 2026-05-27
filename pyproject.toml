@@ -11,9 +11,11 @@ dependencies = [
     "click>=8.0",
     "pyyaml>=6.0",
     "sqlalchemy>=1.4",
+    "psycopg2-binary",       # add this if not already present
     "deepdiff>=6.2",
     "requests",
-    "pyarrow"
+    "pyarrow",
+    "python-dotenv"          # <-- add this
 ]
 [project.scripts]
 schema-guard = "schema_guard.cli:cli"
