@@ -10,6 +10,8 @@ jobs:
           python-version: '3.10'
       - name: Install schema-guard
         run: pip install -e .
+      - name: Run schema gate
+        run: schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
       - name: Debug – check secret length
         run: |
           if [ -z "$DB_CONNECTION_STRING" ]; then
