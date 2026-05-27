@@ -27,4 +27,4 @@ jobs:
       EMAIL_PASSWORD: $secrets.EMAIL_PASSWORD
       EMAIL_FROM: $secrets.EMAIL_FROM
       EMAIL_TO: $secrets.EMAIL_TO
-      EMAIL_SUBJECT: "Schema Drift Detected in CI"
+      EMAIL_SUBJECT: "Schema Drift Detected in CIa"
