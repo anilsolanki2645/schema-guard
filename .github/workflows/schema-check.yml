@@ -18,5 +18,8 @@ jobs:
           else
             echo "DB_CONNECTION_STRING length: ${#DB_CONNECTION_STRING}"
           fi
+    env:
+      DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+      # Provide secret at the job level so the GitHub context is valid for all steps
         env:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
