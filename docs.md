@@ -1,102 +1,87 @@
-Here is a comprehensive **reference documentation** for your Schema Guard project. You can save it as `README.md` or `DOCS.md` in your repository. It covers everything from what the tool does to how to extend it.
-
----
-
 ```markdown
-# Schema Guard 🛡️
+# 🛡️ Schema Guard
 
-**Catch silent schema drift before it breaks your production data pipelines.**
+**Stop silent schema drift before it breaks your production data pipelines.**
 
-Schema Guard is a lightweight CLI tool that captures database schema snapshots and then acts as a CI/CD gate to block deployments when unauthorized schema changes are detected. It’s the missing guardrail for data engineers who’ve been burned by unexpected column drops, type changes, or nullability shifts.
-
----
-
-## Table of Contents
-- [Why Schema Guard?](#why-schema-guard)
-- [Architecture Overview](#architecture-overview)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Command Reference](#command-reference)
-- [Contract YAML Specification](#contract-yaml-specification)
-- [Alerting (Email)](#alerting-email)
-- [CI/CD Integration](#cicd-integration)
-- [Extending with New Extractors](#extending-with-new-extractors)
-- [Project Structure](#project-structure)
-- [Troubleshooting](#troubleshooting)
-- [License](#license)
+Schema Guard is a lightweight CLI tool that captures database schema snapshots and acts as a CI/CD gate, blocking deployments when unauthorized schema changes are detected. It’s the missing guardrail for data engineers who’ve been burned by unexpected column drops, type changes, or nullability shifts.
 
 ---
 
 ## Why Schema Guard?
 
-Every data engineer knows the 2 AM incident:
-- The source team adds a column, changes a type, or drops `NOT NULL` without warning.
+Every data engineer knows the 2 AM nightmare:
+- A source team adds a column, changes a type, or drops a `NOT NULL` without notice.
 - Your ETL pipeline doesn’t fail—it silently writes `NULL`s or corrupts downstream data.
-- An executive dashboard breaks, and it takes hours to trace back to a trivial schema change.
+- Executive dashboards break, and you spend hours tracing the issue back to a trivial schema change.
 
-**Schema Guard stops this at the CI gate.** You define a data contract (YAML), capture a snapshot of the real schema, and then in your deployment pipeline run `schema-guard gate`. Any drift from the contract or snapshot fails the build—*before* the change hits production.
-
----
-
-## Architecture Overview
-
-```
-┌─────────────┐      ┌──────────────┐      ┌─────────────────┐
-│  Contract   │──────▶│  CLI (snap)  │──────▶│  Snapshot JSON  │
-│  (orders.yaml)     └──────────────┘      └─────────────────┘
-│                              │
-│   Live DB Schema             │
-└──────────────────────────────┘
-                                │
-                    ┌───────────▼───────────┐
-                    │  CLI (gate)           │
-                    │  Compares live schema  │
-                    │  vs. snapshot + contract
-                    └───────────┬───────────┘
-                                │
-                    ┌───────────▼───────────┐
-                    │  Diff Engine          │
-                    │  Detects violations   │
-                    └───────────┬───────────┘
-                                │
-                    ┌───────────▼───────────┐
-                    │  Alerter (email)      │
-                    │  Sends notification   │
-                    └───────────────────────┘
-```
-
-1. **Contract** – Describes what the source *must* look like (which columns, types, nullability, allowed drifts).
-2. **Snapshot** – A frozen JSON representation of the actual schema at a trusted moment.
-3. **Gate** – Compares live schema against the snapshot and contract. On drift, it logs violations, sends an email, and exits with code 1 (fails CI).
+Schema Guard stops this at the CI gate. You define a **data contract** (YAML), capture a trusted **schema snapshot**, and then in your deployment pipeline, `schema-guard gate` compares the live source against the snapshot and contract. Any drift fails the build *before* it hits production.
 
 ---
 
-## Installation
+## 🧠 Architecture Overview
 
-From source (for development):
+```
+┌─────────────────┐      ┌──────────────┐      ┌─────────────────┐
+│  Contract       │──────▶│  CLI (snap)  │──────▶│  Snapshot JSON  │
+│  (orders.yaml)  │      └──────────────┘      └─────────────────┘
+│                 │                │
+│  Live Database  │                │
+└─────────────────┘                │
+                                  │
+                      ┌───────────▼───────────┐
+                      │  CLI (gate)           │
+                      │  Compares live schema  │
+                      │  vs snapshot + contract│
+                      └───────────┬───────────┘
+                                  │
+                      ┌───────────▼───────────┐
+                      │  Diff Engine          │
+                      │  Detects violations   │
+                      └───────────┬───────────┘
+                                  │
+                      ┌───────────▼───────────┐
+                      │  Alerter (email)      │
+                      │  Sends notifications  │
+                      └───────────────────────┘
+```
+
+1. **Contract** – Describes the expected schema (columns, types, nullability, allowed drifts).  
+2. **Snapshot** – A frozen JSON representation of the real schema at a trusted point in time.  
+3. **Gate** – Compares live schema to snapshot + contract. If drift is detected, it logs violations, sends an email, and exits with code 1 to fail the CI pipeline.
+
+---
+
+## 🚀 Installation
+
+### From source (for development)
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/your-username/schema-guard.git
 cd schema-guard
 pip install -e .
 ```
 
-Or install from PyPI (once published):
+### From PyPI (once published)
 ```bash
 pip install schema-guard
 ```
 
-### Dependencies
-- Python ≥ 3.8
-- `click`, `pyyaml`, `sqlalchemy`, `psycopg2-binary` (PostgreSQL), `deepdiff`, `python-dotenv`
-
-All dependencies are installed automatically with pip.
+Requires Python ≥ 3.8. Dependencies are installed automatically.
 
 ---
 
-## Quick Start
+## ⚡ Quick Start
 
-1. **Create a contract** for your source table (e.g., `contracts/orders.yaml`):
+### 1. Create the database table
+```sql
+CREATE TABLE public.orders (
+    order_id INT PRIMARY KEY,
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) NOT NULL
+);
+INSERT INTO orders VALUES (1, 99.99, 'shipped');
+```
+
+### 2. Define a contract – `contracts/orders.yaml`
 ```yaml
 source:
   name: prod_orders
@@ -119,173 +104,150 @@ columns:
     nullable: false
 ```
 
-2. **Snap the current schema** (creates a baseline):
+### 3. Set up environment variables – `.env`
+```env
+DB_CONNECTION_STRING=postgresql://postgres:Abc%402645@localhost:5432/schema_guard
+```
+(Note: special characters must be URL‑encoded, e.g., `@` → `%40`)
+
+### 4. Capture a snapshot of the current schema
 ```bash
 schema-guard snap --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
 ```
-Output: `✅ Snapshot saved to snapshots/orders.json`
+✅ Snapshot saved to `snapshots/orders.json`
 
-3. **Simulate a drift** (e.g., in psql):
-```sql
-ALTER TABLE orders ALTER COLUMN amount DROP NOT NULL;
-```
-
-4. **Run the gate**:
+### 5. Verify the gate passes
 ```bash
 schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
 ```
-Output:
+✅ Schema matches snapshot. No drift.
+
+### 6. Simulate a drift
+```sql
+ALTER TABLE public.orders ALTER COLUMN amount DROP NOT NULL;
 ```
+
+### 7. Run the gate again (should fail)
+```bash
+schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
+```
+```text
 ❌ Schema drift detected:
   - CRITICAL: Column 'amount' nullable changed from False to True.
 ```
-The command exits with code 1.
+Command exits with code 1, and an email alert is sent (if configured).
+
+### 8. Revert to clean state
+```sql
+ALTER TABLE public.orders ALTER COLUMN amount SET NOT NULL;
+```
+Now the gate passes again.
 
 ---
 
-## Configuration
+## 📋 Configuration
 
-Schema Guard uses environment variables (via a `.env` file) for all sensitive or environment‑specific settings.
-
-### Database Connection
+### Database connection
 Define a PostgreSQL connection string in `.env`:
 ```env
 DB_CONNECTION_STRING=postgresql://user:password@host:5432/dbname
 ```
-Special characters in the password must be URL‑encoded (e.g., `@` → `%40`).
+In the contract, reference it with `"env:DB_CONNECTION_STRING"`.  
+The tool’s `contract.py` resolves any value beginning with `env:` to the corresponding environment variable.
 
-In the contract YAML, reference it with `"env:DB_CONNECTION_STRING"`. The tool’s `contract.py` automatically resolves `env:...` values.
-
-### Email Alerting
-To receive email alerts on drift, set these variables in `.env`:
+### Email alerting (optional)
+Add these to `.env` to receive drift alerts via SMTP:
 ```env
 EMAIL_ENABLED=true
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password    # Gmail: use an App Password
+EMAIL_PASSWORD=your_app_password    # Use an App Password, not your real password
 EMAIL_FROM=your_email@gmail.com
 EMAIL_TO=oncall@example.com
 EMAIL_SUBJECT=Schema Drift Detected
 ```
-If `EMAIL_ENABLED` is not `true`, alerts are silently skipped. No email means the gate still works—only the notification is omitted.
-
-For Gmail, you must enable 2‑FA and generate an **App Password**. Other SMTP providers work similarly (sendgrid, Mailgun, etc.).
+If `EMAIL_ENABLED` is not `true`, alerts are silently skipped—the gate still works, but no email is sent.
 
 ---
 
-## Command Reference
+## 📖 Command Reference
 
-### `schema-guard snap`
-Captures the current schema of the source and writes a snapshot file.
-
-**Usage:**
+### `snap` – capture a schema snapshot
 ```bash
 schema-guard snap --contract <contract.yaml> --snapshot-file <snapshot.json>
 ```
+- Connects to the source defined in the contract.
+- Inspects the table and saves column metadata (name, type, nullable, primary key) along with a hash and timestamp.
 
-**Options:**
-- `--contract` (required) – Path to the contract YAML.
-- `--snapshot-file` – Path for the output snapshot (default: `schema_snapshot.json`).
-
-**Behavior:**
-- Connects to the database defined in the contract.
-- Inspects the table and saves column names, types, nullability, and primary key info.
-- Also stores a hash and timestamp in the snapshot.
-
----
-
-### `schema-guard gate`
-Compares the live source schema against the snapshot and contract rules. Exits with code 1 on any violation.
-
-**Usage:**
+### `gate` – check for drift
 ```bash
 schema-guard gate --contract <contract.yaml> --snapshot-file <snapshot.json>
 ```
-
-**Options:**
-- `--contract` (required) – Path to the contract YAML.
-- `--snapshot-file` – Path to the baseline snapshot (default: `schema_snapshot.json`).
-
-**Violation types:**
-- **Column removed** – CRITICAL
-- **New column added** – WARNING (doesn't fail by default; can be configured)
-- **Type changed** (not in allowed_drift) – CRITICAL
-- **Nullable changed** – CRITICAL (unless explicitly allowed)
-- **Allowed drift** – passes if the exact `from` and `to` match a rule
-
-If violations are found, the command prints them and triggers an email alert (if configured).
+- Extracts the current live schema.
+- Loads the snapshot and compares against the contract rules.
+- Returns exit code 0 if all is well, 1 if any violation is found.
+- **Violation types:** column removed (CRITICAL), new column added (WARNING), type changed (CRITICAL, unless allowed_drift), nullable change (CRITICAL).
+- On violation, prints the diff and triggers email alert (if enabled).
 
 ---
 
-## Contract YAML Specification
+## 🧱 Contract YAML Specification
 
 A contract file defines the expected state of a data source.
 
-**Structure:**
 ```yaml
 source:
   name: friendly_name           # Used in logs (optional)
   type: postgres                # Source type (currently only postgres supported)
   connection: "env:DB_CONNECTION_STRING"  # Database URL or env:VARIABLE
-  schema: public                # Database schema name
+  schema: public                # Database schema
   table: orders                 # Table name
-  freshness_hours: 24           # (future use) max allowed snapshot age
+  freshness_hours: 24           # (future use)
 
 columns:
   - name: order_id
-    type: integer               # SQLAlchemy type name (e.g., "integer", "numeric(10,2)")
+    type: integer               # Use the exact SQLAlchemy type string
     nullable: false
-    checks:                     # Optional: additional logical checks
-      - unique_in_table         # (future: could integrate Great Expectations)
-    allowed_drift:              # Optional: list of type changes that are acceptable
+    checks:                     # Optional
+      - unique_in_table
+    allowed_drift:              # Optional type changes allowed without alert
       - from: "numeric(10,2)"
         to: "numeric(12,2)"
 ```
 
-**Column rules:**
-- `name` and `type` must match exactly (case‑sensitive).
-- `nullable` must match (`true`/`false`).
-- If a column has `allowed_drift`, a type change is permitted only if it matches one of the listed `from`/`to` pairs. Otherwise, any type change is forbidden.
+- **`name`** and **`type`** must match the live schema exactly (case‑sensitive).  
+- **`nullable`** must be `true` or `false`.  
+- If a column has **`allowed_drift`**, a type change passes only if it matches one of the listed `from`/`to` pairs.
 
 ---
 
-## Alerting (Email)
+## 🔔 Alerting (Email)
 
-The alerting module (`alerter.py`) sends an email listing all violations. It uses environment variables for SMTP configuration. No alerting means the gate still functions; the notification is optional.
-
-The email body looks like:
-```
-The following schema drift violations were detected:
-
-• CRITICAL: Column 'amount' nullable changed from False to True.
-• CRITICAL: Column 'status' type changed from character varying(20) to text.
-```
-
-If email fails to send (wrong password, network issue), a message is printed to stderr: `[alerter] Failed to send email: <reason>`. The gate still fails as expected.
+The `alerter.py` module sends an email with the list of violations. Uses Python’s `smtplib` and `email` libraries (no extra deps).  
+If the email fails (wrong password, network issue), the error is printed to stderr as `[alerter] Failed to send email: ...`, but the gate still fails as expected.
 
 ---
 
-## CI/CD Integration
+## ⚙️ CI/CD Integration
 
-### GitHub Actions Example
-Place this workflow in `.github/workflows/schema-check.yml`:
-
+### GitHub Actions example – `.github/workflows/schema-check.yml`
 ```yaml
 name: Schema Drift Gate
+
 on: [push, pull_request]
 
 jobs:
-  drift-check:
+  schema-drift:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Install Schema Guard
-        run: pip install schema-guard  # or pip install -e .
-      - name: Run Schema Gate
+      - name: Install schema-guard
+        run: pip install -e .            # or pip install schema-guard
+      - name: Run schema gate
         run: schema-guard gate --contract contracts/orders.yaml --snapshot-file snapshots/orders.json
         env:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
@@ -298,19 +260,46 @@ jobs:
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
 ```
 
-**How it works:**
-- The pipeline runs on every push and pull request.
-- If the gate fails, the build turns red, preventing merge.
-- Email alerts are sent to the on‑call address (if configured).
+Store these values as [GitHub Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets).  
+Now every push and pull request will be checked for schema drift automatically.
 
 ---
 
-## Extending with New Extractors
+## 📁 Project Structure
 
-To support a new source (e.g., Snowflake, BigQuery, S3 Parquet):
+```
+schema-guard/
+├── .github/workflows/
+│   └── schema-check.yml
+├── contracts/
+│   └── orders.yaml                # Your data contracts
+├── snapshots/                     # Baseline snapshots (auto‑created)
+│   └── orders.json
+├── src/schema_guard/
+│   ├── __init__.py
+│   ├── cli.py                     # Click CLI (snap & gate)
+│   ├── config.py                  # (optional) connection helpers
+│   ├── contract.py                # YAML parser & env resolver
+│   ├── extractors/
+│   │   ├── __init__.py
+│   │   └── postgres.py            # PostgreSQL schema inspector
+│   ├── snapshot.py                # Save/load snapshot JSON
+│   ├── diff_engine.py             # Drift detection logic
+│   └── alerter.py                 # SMTP email alerting
+├── pyproject.toml                 # Build & packaging config
+├── .gitignore
+├── .env                           # Secrets (never commit)
+└── README.md
+```
+
+---
+
+## 🔌 Extending with New Extractors
+
+To support another data source (Snowflake, BigQuery, S3 Parquet, etc.):
 
 1. Create a new file in `src/schema_guard/extractors/` (e.g., `snowflake.py`).
-2. Implement a function `get_schema(connection_string, schema_name, table_name)` that returns a dictionary in this format:
+2. Implement a function `get_schema(connection_string, schema_name, table_name)` returning:
 ```python
 {
     "table": "schema.table",
@@ -325,57 +314,33 @@ To support a new source (e.g., Snowflake, BigQuery, S3 Parquet):
     ]
 }
 ```
-3. In `cli.py`, add an `elif` branch in the `snap` and `gate` commands to call your new extractor based on `source.type`.
-4. Add any required Python package dependencies to `pyproject.toml`.
+3. In `cli.py`, add an `elif` branch for the new source type.
+4. Add any required packages to `pyproject.toml`.
+
+Pull requests are welcome!
 
 ---
 
-## Project Structure
-
-```
-schema-guard/
-├── .github/workflows/
-│   └── schema-check.yml          # CI pipeline example
-├── contracts/                    # Store your data contract YAML files here
-│   └── orders.yaml
-├── snapshots/                    # Baseline snapshots (automatically created)
-│   └── orders.json
-├── src/schema_guard/
-│   ├── __init__.py
-│   ├── cli.py                    # Click CLI definition
-│   ├── config.py                 # .env loader (if needed)
-│   ├── contract.py               # YAML contract parser & env resolver
-│   ├── extractors/
-│   │   ├── __init__.py
-│   │   └── postgres.py           # PostgreSQL schema inspector
-│   ├── snapshot.py               # Save/load snapshot JSON
-│   ├── diff_engine.py            # Drift detection logic
-│   └── alerter.py                # Email alerting (SMTP)
-├── pyproject.toml                # Package metadata & build config
-├── .env                          # Secrets (not committed to git)
-└── README.md
-```
-
----
-
-## Troubleshooting
+## 🧪 Troubleshooting
 
 | Problem | Solution |
 |--------|----------|
-| `FileNotFoundError: snapshots/orders.json` | Create the `snapshots/` directory or update `snapshot.py` to auto‑create it (already recommended). |
-| `Could not parse SQLAlchemy URL` | The connection string is invalid. Check your `.env`/contract; ensure `env:...` is resolved. |
-| `FATAL: password authentication failed` | Wrong credentials or special characters not URL‑encoded. Encode `@` as `%40`, `%` as `%25`, etc. Use `psql` to verify. |
-| Email not sent | Set `EMAIL_ENABLED=true` in `.env`. Check SMTP settings and that you’re using an App Password for Gmail. Look for `[alerter]` messages in the terminal. |
-| Gate passes when it shouldn’t | Ensure the snapshot file is the correct baseline. Run `snap` again after an intentional schema change. |
-| `ModuleNotFoundError` when running CLI | Make sure you installed with `pip install -e .` from the project root. |
+| `FileNotFoundError: snapshots/orders.json` | Create the `snapshots/` directory or update `snapshot.py` to auto‑create it (already done in recent versions). |
+| `Could not parse SQLAlchemy URL` | The connection string is invalid. Check `.env` and contract; ensure `env:` placeholders resolve correctly. |
+| `FATAL: password authentication failed` | Wrong credentials or special characters not URL‑encoded. Encode `@` as `%40`, `%` as `%25`, etc. Test with `psql`. |
+| Email not sent | Set `EMAIL_ENABLED=true`. Use an App Password for Gmail. Look for `[alerter]` messages in terminal. |
+| Gate passes when it shouldn’t | Ensure the snapshot file is the correct baseline. Re‑run `snap` after any intentional schema change. |
+| `ModuleNotFoundError` when running CLI | Run `pip install -e .` from the project root. |
 
 ---
 
-## License
+## 📜 License
 
-*(Choose your license – e.g., MIT, Apache 2.0)*
+Schema Guard is open‑source under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Built with frustration turned into code by a data engineer who just wants to sleep through the night.**
+**Built with frustration turned into code by a data engineer who just wants to sleep through the night.** ✨
 ```
+
+That README is ready to drop into your repository. It explains the problem, provides a full walkthrough, includes a working example, and covers every part of your tool—from configuration to CI/CD. Let me know when you want the next piece.
