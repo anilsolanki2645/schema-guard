@@ -1,16 +1,20 @@
 import os
+import sys
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-def send_email_alert(violations):
+
+def send_email_alert(violations) -> bool:
     """
     Send an email alert with schema drift violations.
     Configuration is read from environment variables.
+    
+    Returns True if email was sent successfully, False otherwise.
     """
     enabled = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
     if not enabled:
-        return
+        return False
 
     # SMTP settings
     host = os.getenv("EMAIL_HOST", "localhost")
@@ -22,8 +26,9 @@ def send_email_alert(violations):
     subject = os.getenv("EMAIL_SUBJECT", "Schema Drift Alert")
 
     if not user or not password or not to_addr:
-        # Silently skip if not fully configured
-        return
+        # --- Fix #11: Print to stderr, not stdout ---
+        print("[alerter] Email not fully configured (missing EMAIL_USER, EMAIL_PASSWORD, or EMAIL_TO). Skipping.", file=sys.stderr)
+        return False
 
     # Build message
     body = "The following schema drift violations were detected:\n\n"
@@ -42,6 +47,8 @@ def send_email_alert(violations):
         server.login(user, password)
         server.sendmail(from_addr, to_addr.split(","), msg.as_string())
         server.quit()
+        return True
     except Exception as e:
-        # Fail silently – alert failure shouldn't break the gate
-        print(f"[alerter] Failed to send email: {e}", flush=True)
+        # --- Fix #11: Print to stderr instead of stdout ---
+        print(f"[alerter] Failed to send email: {e}", file=sys.stderr, flush=True)
+        return False
