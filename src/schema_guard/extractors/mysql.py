@@ -1,23 +1,26 @@
 from schema_guard.extractors.base import BaseExtractor
 from sqlalchemy import create_engine, inspect
-import logging
 
-class PostgresExtractor(BaseExtractor):
+class MySQLExtractor(BaseExtractor):
     def get_schema(self, connection_details: dict | str, schema_name: str, table_name: str) -> dict:
         """
-        Extract schema metadata from a PostgreSQL table.
+        Extract schema metadata from a MySQL table.
+        Note: In MySQL, schema_name is usually the database/schema.
         """
-        connection_string = self.make_sqlalchemy_url(connection_details, "postgresql")
+        # If it is a dictionary connection, default to mysql+pymysql (commonly used pure-python driver)
+        # or fallback to default mysql driver if prefix is already present.
+        connection_string = self.make_sqlalchemy_url(connection_details, "mysql+pymysql")
         engine = create_engine(connection_string)
         try:
             inspector = inspect(engine)
             columns = inspector.get_columns(table_name, schema=schema_name)
-            # Also get primary key info
+            
+            # Get primary key info
             pk_info = inspector.get_pk_constraint(table_name, schema=schema_name)
             pk_columns = pk_info.get('constrained_columns', [])
 
             schema = {
-                "table": f"{schema_name}.{table_name}",
+                "table": f"{schema_name}.{table_name}" if schema_name else table_name,
                 "columns": []
             }
             for col in columns:
@@ -30,9 +33,3 @@ class PostgresExtractor(BaseExtractor):
             return schema
         finally:
             engine.dispose()
-
-def get_schema(connection_string: str, schema_name: str, table_name: str) -> dict:
-    """
-    Backwards compatibility function.
-    """
-    return PostgresExtractor().get_schema(connection_string, schema_name, table_name)

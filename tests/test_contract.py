@@ -124,7 +124,7 @@ class TestContractValidation:
     def test_unsupported_source_type(self, tmp_path):
         data = {
             "source": {
-                "type": "snowflake",
+                "type": "mongodb",
                 "connection": "xxx",
                 "schema": "public",
                 "table": "orders",
@@ -132,6 +132,54 @@ class TestContractValidation:
         }
         path = _write_yaml(str(tmp_path), data)
         with pytest.raises(ValueError, match="Unsupported source type"):
+            load_contract(path)
+
+
+# ─── Jinja resolution ──────────────────────────────────────────────────────────
+
+class TestJinjaResolution:
+    def test_renders_env_var_with_default(self, tmp_path):
+        content = """
+source:
+  type: postgres
+  connection: postgresql://user:pass@localhost/db
+  schema: "{{ env_var('NON_EXISTENT_VAR_XYZ', 'default_schema') }}"
+  table: orders
+"""
+        path = os.path.join(str(tmp_path), "contract.yaml")
+        with open(path, "w") as f:
+            f.write(content)
+        cfg = load_contract(path)
+        assert cfg["source"]["schema"] == "default_schema"
+
+    def test_renders_env_var_existing(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("MY_SCHEMA_VAR", "custom_schema")
+        content = """
+source:
+  type: postgres
+  connection: postgresql://user:pass@localhost/db
+  schema: "{{ env_var('MY_SCHEMA_VAR') }}"
+  table: orders
+"""
+        path = os.path.join(str(tmp_path), "contract.yaml")
+        with open(path, "w") as f:
+            f.write(content)
+        cfg = load_contract(path)
+        assert cfg["source"]["schema"] == "custom_schema"
+
+    def test_renders_env_var_missing_raises(self, tmp_path, monkeypatch):
+        monkeypatch.delenv("MY_SCHEMA_VAR", raising=False)
+        content = """
+source:
+  type: postgres
+  connection: postgresql://user:pass@localhost/db
+  schema: "{{ env_var('MY_SCHEMA_VAR') }}"
+  table: orders
+"""
+        path = os.path.join(str(tmp_path), "contract.yaml")
+        with open(path, "w") as f:
+            f.write(content)
+        with pytest.raises(ValueError, match="Environment variable 'MY_SCHEMA_VAR' not set"):
             load_contract(path)
 
     def test_column_missing_name(self, tmp_path):

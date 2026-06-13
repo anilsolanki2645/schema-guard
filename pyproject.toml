@@ -28,9 +28,21 @@ dependencies = [
     "sqlalchemy>=1.4",
     "psycopg2-binary",
     "python-dotenv",
+    "jinja2>=3.0",
 ]
 
 [project.optional-dependencies]
+snowflake = ["snowflake-sqlalchemy>=1.5"]
+sqlserver = ["pymssql>=2.2"]
+oracle = ["oracledb>=1.0"]
+databricks = ["databricks-sql-connector>=2.0", "databricks-sqlalchemy>=1.0"]
+all = [
+    "snowflake-sqlalchemy>=1.5",
+    "pymssql>=2.2",
+    "oracledb>=1.0",
+    "databricks-sql-connector>=2.0",
+    "databricks-sqlalchemy>=1.0",
+]
 dev = ["pytest>=7.0"]
 
 [project.scripts]

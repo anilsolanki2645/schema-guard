@@ -1,23 +1,27 @@
 from schema_guard.extractors.base import BaseExtractor
 from sqlalchemy import create_engine, inspect
-import logging
 
-class PostgresExtractor(BaseExtractor):
+
+class SQLServerExtractor(BaseExtractor):
     def get_schema(self, connection_details: dict | str, schema_name: str, table_name: str) -> dict:
         """
-        Extract schema metadata from a PostgreSQL table.
+        Extract schema metadata from a SQL Server table.
+        Uses pymssql driver via SQLAlchemy.
         """
-        connection_string = self.make_sqlalchemy_url(connection_details, "postgresql")
+        connection_string = self.make_sqlalchemy_url(connection_details, "mssql+pymssql")
         engine = create_engine(connection_string)
         try:
             inspector = inspect(engine)
-            columns = inspector.get_columns(table_name, schema=schema_name)
-            # Also get primary key info
-            pk_info = inspector.get_pk_constraint(table_name, schema=schema_name)
+            # SQL Server uses 'dbo' as default schema
+            effective_schema = schema_name or "dbo"
+            columns = inspector.get_columns(table_name, schema=effective_schema)
+
+            # Get primary key info
+            pk_info = inspector.get_pk_constraint(table_name, schema=effective_schema)
             pk_columns = pk_info.get('constrained_columns', [])
 
             schema = {
-                "table": f"{schema_name}.{table_name}",
+                "table": f"{effective_schema}.{table_name}",
                 "columns": []
             }
             for col in columns:
@@ -30,9 +34,3 @@ class PostgresExtractor(BaseExtractor):
             return schema
         finally:
             engine.dispose()
-
-def get_schema(connection_string: str, schema_name: str, table_name: str) -> dict:
-    """
-    Backwards compatibility function.
-    """
-    return PostgresExtractor().get_schema(connection_string, schema_name, table_name)

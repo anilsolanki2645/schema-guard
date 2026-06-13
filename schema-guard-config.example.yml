@@ -1,0 +1,62 @@
+# schema-guard-config.yml — Configuration file for Schema Guard
+# Place this file in your project root. Schema Guard will auto-detect it.
+#
+# All values can use Jinja2 templating with env_var():
+#   {{ env_var('MY_VAR') }}              — required env var
+#   {{ env_var('MY_VAR', 'default') }}   — with fallback
+
+# -------------------------------------------------------------------
+# Global defaults (used when no profile is active)
+# -------------------------------------------------------------------
+contract: contracts/orders.yaml
+snapshot-file: snapshots/orders.json
+verbose: false
+dry-run: false
+require-alert: false
+
+# -------------------------------------------------------------------
+# Email alerting settings (overrides .env EMAIL_* variables)
+# -------------------------------------------------------------------
+# email:
+#   enabled: true
+#   host: smtp.gmail.com
+#   port: 587
+#   user: "{{ env_var('EMAIL_USER') }}"
+#   password: "{{ env_var('EMAIL_PASSWORD') }}"
+#   from: alerts@example.com
+#   to: oncall@example.com
+#   subject: "Schema Drift Detected"
+
+# -------------------------------------------------------------------
+# Per-environment profiles
+# Activate with: SCHEMA_GUARD_PROFILE=dev (env var) or profile: dev
+# -------------------------------------------------------------------
+# profile: dev   # uncomment to set a default active profile
+
+# profiles:
+#   dev:
+#     contract: contracts/orders-dev.yaml
+#     snapshot-file: snapshots/orders-dev.json
+#     verbose: true
+#     dry-run: true
+#
+#   staging:
+#     contract: contracts/orders-staging.yaml
+#     snapshot-file: snapshots/orders-staging.json
+#     verbose: false
+#     dry-run: false
+#
+#   prod:
+#     contract: contracts/orders.yaml
+#     snapshot-file: snapshots/orders.json
+#     verbose: false
+#     dry-run: false
+#     require-alert: true
+#     email:
+#       enabled: true
+#       host: smtp.gmail.com
+#       port: 587
+#       user: "{{ env_var('EMAIL_USER') }}"
+#       password: "{{ env_var('EMAIL_PASSWORD') }}"
+#       from: "{{ env_var('EMAIL_FROM') }}"
+#       to: "{{ env_var('EMAIL_TO') }}"
